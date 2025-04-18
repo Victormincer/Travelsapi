@@ -4,13 +4,13 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 
 // Ruta GET /api/users
-router.get('/', userController.getUsers);
+router.get('/getallusers', userController.getUsers);
 
 // Ruta GET /api/users/:id
 router.get('/:id', userController.getUserById);
 
 // Ruta POST /api/users
-router.post('/', userController.createUser);
+router.post('/createuser', userController.createUser);
 
 // Ruta PUT /api/users/:id
 router.put('/:id', userController.updateUser);
