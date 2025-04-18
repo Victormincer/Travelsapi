@@ -1,37 +1,36 @@
 // routes/travelRoutes.js - Rutas para las operaciones de viajes
 const express = require('express');
 const router = express.Router();
-const routeController = require('../controllers/routeController');
+const travelController = require('../controllers/travelController');
 
 // Crear una nueva ruta
-router.post('/', routeController.createRoute);
+router.post('/', travelController.createRoute);
 
 // Obtener todas las rutas
-router.get('/', routeController.getAllRoutes);
+router.get('/', travelController.getAllRoutes);
 
-// Obtener ruta por ID
-router.get('/id/:id', routeController.getRouteById);
+// Obtener una ruta por ID
+router.get('/id/:id', travelController.getRouteById);
 
-// Actualizar una ruta
-router.patch('/:id', routeController.updateRoute);
+// Actualizar una ruta por ID
+router.patch('/:id', travelController.updateRoute);
 
-// Eliminar una ruta
-router.delete('/:id', routeController.deleteRoute);
+// Eliminar una ruta por ID
+router.delete('/:id', travelController.deleteRoute);
 
 // Buscar ruta por nombre de origen y destino
-router.post('/nameroute', routeController.getRouteByName);
+router.post('/search/name', travelController.getRouteByName);
 
 // Buscar ruta por coordenadas
-router.post('/coordinates', routeController.getRouteByCoordinates);
+router.post('/search/coordinates', travelController.getRouteByCoordinates);
 
-// Obtener ruta con información de usuario por ID de ruta
-router.get('/route/:id/withuser', routeController.getRouteWithUserInfo);
+// Obtener una ruta con información de usuario por ID
+router.get('/:id/with-user', travelController.getRouteWithUserInfo);
 
-// Obtener rutas de un usuario por su email
-router.get('/user/:email/routes', routeController.getRoutesByUserEmail);
+// Obtener todas las rutas de un usuario por su ID
+router.get('/user/:userId/routes', travelController.getRoutesByUserId);
 
-// Obtener estadísticas de rutas de un usuario por email
-router.get('/stats/user/:email', routeController.getRouteStatsByEmail);
-
+// Obtener estadísticas de rutas de un usuario por su ID
+router.get('/user/:userId/stats', travelController.getRouteStatsByUserId);
 
 module.exports = router;
