@@ -1,11 +1,11 @@
-// controllers/travelController.js - Controlador para operaciones de viajes
+// controllers/travelController.js
 const mongoose = require('mongoose');
-const Route = require('../models/Travel');
+const Travel = require('../models/Travel');
 
 // Crear una nueva ruta
 exports.createRoute = async (req, res) => {
   try {
-    const newRoute = new Route(req.body);
+    const newRoute = new Travel(req.body);
     await newRoute.save();
     res.status(201).json(newRoute);
   } catch (error) {
@@ -14,9 +14,9 @@ exports.createRoute = async (req, res) => {
 };
 
 // Obtener todas las rutas
-exports.getAllRoutes = async (req, res) => {
+exports.getAllRoutes = async (_req, res) => {
   try {
-    const routes = await Route.find();
+    const routes = await Travel.find();
     res.status(200).json(routes);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -26,22 +26,32 @@ exports.getAllRoutes = async (req, res) => {
 // Obtener una ruta por ID
 exports.getRouteById = async (req, res) => {
   try {
-    const route = await Route.findById(req.params.id);
-    if (!route) return res.status(404).json({ message: 'Route not found' });
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'ID de ruta inválido' });
+    }
+
+    const route = await Travel.findById(id);
+    if (!route) return res.status(404).json({ message: 'Ruta no encontrada' });
     res.status(200).json(route);
   } catch (error) {
-    res.status(400).json({ message: 'Invalid route ID' });
+    res.status(500).json({ message: error.message });
   }
 };
 
 // Actualizar una ruta por ID
 exports.updateRoute = async (req, res) => {
   try {
-    const route = await Route.findByIdAndUpdate(req.params.id, req.body, {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'ID de ruta inválido' });
+    }
+
+    const route = await Travel.findByIdAndUpdate(id, req.body, {
       new: true,
       runValidators: true,
     });
-    if (!route) return res.status(404).json({ message: 'Route not found' });
+    if (!route) return res.status(404).json({ message: 'Ruta no encontrada' });
     res.status(200).json(route);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -51,11 +61,17 @@ exports.updateRoute = async (req, res) => {
 // Eliminar una ruta por ID
 exports.deleteRoute = async (req, res) => {
   try {
-    const route = await Route.findByIdAndDelete(req.params.id);
-    if (!route) return res.status(404).json({ message: 'Route not found' });
-    res.status(200).json({ message: 'Route deleted successfully', route });
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'ID de ruta inválido' });
+    }
+
+    const route = await Travel.findByIdAndDelete(id);
+    if (!route) return res.status(404).json({ message: 'Ruta no encontrada' });
+
+    res.status(200).json({ message: 'Ruta eliminada correctamente', route });
   } catch (error) {
-    res.status(400).json({ message: 'Invalid route ID' });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -63,134 +79,139 @@ exports.deleteRoute = async (req, res) => {
 exports.getRouteByName = async (req, res) => {
   try {
     const { origin, destination } = req.body;
+
     if (!origin?.name || !destination?.name) {
-      return res.status(400).json({ message: "Origin and destination names are required" });
+      return res.status(400).json({ message: 'Los nombres de origen y destino son obligatorios' });
     }
 
-    const route = await Route.findOne({
-      "origin.name": origin.name,
-      "destination.name": destination.name,
+    const route = await Travel.findOne({
+      'origin.name': origin.name,
+      'destination.name': destination.name,
     });
 
-    if (!route) return res.status(404).json({ message: "Route not found" });
+    if (!route) return res.status(404).json({ message: 'Ruta no encontrada' });
     res.status(200).json(route);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Obtener ruta por coordenadas
+// Obtener ruta por coordenadas exactas
 exports.getRouteByCoordinates = async (req, res) => {
   try {
     const { originCoordinates, destinationCoordinates } = req.body;
-    if (!originCoordinates || !destinationCoordinates) {
-      return res.status(400).json({ message: "Coordinates are required" });
+
+    if (
+      !Array.isArray(originCoordinates) || originCoordinates.length !== 2 ||
+      !Array.isArray(destinationCoordinates) || destinationCoordinates.length !== 2
+    ) {
+      return res.status(400).json({ message: 'Coordenadas inválidas: se requieren dos valores [longitud, latitud]' });
     }
 
-    const route = await Route.findOne({
-      "origin.coordinates": originCoordinates,
-      "destination.coordinates": destinationCoordinates,
+    const route = await Travel.findOne({
+      'origin.coordinates': originCoordinates,
+      'destination.coordinates': destinationCoordinates,
     });
 
-    if (!route) return res.status(404).json({ message: "Route not found" });
+    if (!route) return res.status(404).json({ message: 'Ruta no encontrada' });
     res.status(200).json(route);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Obtener ruta con información de usuario por ID de ruta
+// Obtener ruta con datos de usuario (por ID de ruta)
 exports.getRouteWithUserInfo = async (req, res) => {
   try {
     const routeId = req.params.id;
     if (!mongoose.Types.ObjectId.isValid(routeId)) {
-      return res.status(400).json({ message: "Invalid route ID format" });
+      return res.status(400).json({ message: 'ID de ruta inválido' });
     }
 
-    const result = await Route.aggregate([
+    const result = await Travel.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(routeId) } },
       {
         $lookup: {
-          from: "users",
-          localField: "userId",
-          foreignField: "_id",
-          as: "userDetails",
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'userDetails',
         },
       },
-      { $unwind: { path: "$userDetails", preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: '$userDetails', preserveNullAndEmptyArrays: true } },
       {
         $project: {
-          "userDetails.password": 0,
+          'userDetails.password': 0,
         },
       },
     ]);
 
-    if (!result.length) return res.status(404).json({ message: "Route not found" });
+    if (!result.length) return res.status(404).json({ message: 'Ruta no encontrada' });
     res.status(200).json(result[0]);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Obtener rutas con usuarios por ID de usuario
+// Obtener todas las rutas de un usuario con sus datos
 exports.getRoutesByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
+      return res.status(400).json({ message: 'ID de usuario inválido' });
     }
 
-    const routes = await Route.aggregate([
+    const routes = await Travel.aggregate([
       { $match: { userId: new mongoose.Types.ObjectId(userId) } },
       {
         $lookup: {
-          from: "users",
-          localField: "userId",
-          foreignField: "_id",
-          as: "userDetails",
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'userDetails',
         },
       },
-      { $unwind: { path: "$userDetails", preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: '$userDetails', preserveNullAndEmptyArrays: true } },
       {
         $project: {
-          "userDetails.password": 0,
+          'userDetails.password': 0,
         },
       },
     ]);
 
-    if (!routes.length) return res.status(404).json({ message: "No routes found for this user" });
+    if (!routes.length) return res.status(404).json({ message: 'No se encontraron rutas para este usuario' });
     res.status(200).json(routes);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Obtener estadísticas de rutas por ID de usuario
+// Obtener estadísticas por usuario
 exports.getRouteStatsByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
+      return res.status(400).json({ message: 'ID de usuario inválido' });
     }
 
-    const result = await Route.aggregate([
+    const stats = await Travel.aggregate([
       { $match: { userId: new mongoose.Types.ObjectId(userId) } },
       {
         $lookup: {
-          from: "users",
-          localField: "userId",
-          foreignField: "_id",
-          as: "userDetails",
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'userDetails',
         },
       },
-      { $unwind: { path: "$userDetails", preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: '$userDetails', preserveNullAndEmptyArrays: true } },
       {
         $group: {
-          _id: "$userId",
+          _id: '$userId',
           totalRoutes: { $sum: 1 },
-          totalDistance: { $sum: "$distance" },
-          totalTime: { $sum: "$duration" },
-          userInfo: { $first: "$userDetails" },
+          totalDistance: { $sum: '$distance' },
+          totalTime: { $sum: '$duration' },
+          userInfo: { $first: '$userDetails' },
         },
       },
       {
@@ -204,14 +225,14 @@ exports.getRouteStatsByUserId = async (req, res) => {
       },
     ]);
 
-    if (!result.length) {
+    if (!stats.length) {
       return res.status(404).json({
-        message: "No routes found for this user",
+        message: 'No se encontraron rutas para este usuario',
         stats: { totalRoutes: 0, totalDistance: 0, totalTime: 0 },
       });
     }
 
-    res.status(200).json(result[0]);
+    res.status(200).json(stats[0]);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
