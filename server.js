@@ -10,8 +10,10 @@ const app = express();
 // Middleware
 app.use(express.json({ extended: false }));
 
-// Definir rutas
+// Definir rutas de los usuarios
 app.use('/api/users', require('./routes/userRoutes'));
+// Definir rutas de los viajes
+app.use('/api/travels', require('./routes/travelRoutes'));
 
 // Ruta de prueba
 app.get('/', (req, res) => res.send('API funcionando'));
