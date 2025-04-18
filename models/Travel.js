@@ -1,4 +1,3 @@
-
 // models/Travel.js - Modelo de viaje
 const mongoose = require('mongoose');
 
