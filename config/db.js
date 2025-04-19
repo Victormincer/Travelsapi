@@ -1,17 +1,24 @@
-// config/db.js - Archivo de configuración para la conexión a MongoDB
+// config/db.js - Conexión a MongoDB usando variable de entorno
+
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect('mongodb+srv://admin:1020464279@cluster0.60ms1ra.mongodb.net/DB_Travels_co', {
+    const uri = process.env.MONGO_URI;
+
+    if (!uri) {
+      throw new Error('La variable de entorno MONGO_URI no está definida.');
+    }
+
+    const conn = await mongoose.connect(uri, {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
-    
-    console.log(`MongoDB conectado: ${conn.connection.host}`);
+
+    console.log(`✅ MongoDB conectado: ${conn.connection.host}`);
   } catch (error) {
-    console.error(`Error: ${error.message}`);
-    process.exit(1);
+    console.error(`❌ Error de conexión MongoDB: ${error.message}`);
+    process.exit(1); // Detiene la app si falla la conexión
   }
 };
 
