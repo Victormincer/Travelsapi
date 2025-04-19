@@ -1,23 +1,31 @@
 // server.js - Archivo principal para iniciar el servidor
 const express = require('express');
+const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 
-// Conectar a la base de datos
+// Cargar variables de entorno desde .env (solo en desarrollo)
+dotenv.config();
+
+// Conectar a la base de datos MongoDB
 connectDB();
 
 const app = express();
 
-// Middleware
-app.use(express.json({ extended: false }));
+// Middleware para parsear JSON
+app.use(express.json());
 
-// Definir rutas de los usuarios
+// Rutas principales
 app.use('/api/users', require('./routes/userRoutes'));
-// Definir rutas de los viajes
 app.use('/api/travels', require('./routes/travelRoutes'));
 
-// Ruta de prueba
-app.get('/', (req, res) => res.send('API funcionando'));
+// Ruta base
+app.get('/', (req, res) => {
+  res.send('✅ API funcionando correctamente');
+});
 
-const PORT = process.env.PORT || 8443;
+// Puerto proporcionado por Azure o por defecto
+const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => console.log(`Servidor iniciado en el puerto ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor iniciado en el puerto ${PORT}`);
+});
