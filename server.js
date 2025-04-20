@@ -20,12 +20,12 @@ app.use('/api/travels', require('./routes/travelRoutes'));
 
 // Ruta base
 app.get('/', (req, res) => {
-  res.send('✅ API funcionando correctamente');
+  res.send('API funcionando correctamente');
 });
 
 // Puerto proporcionado por Azure o por defecto
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor iniciado en el puerto ${PORT}`);
+  console.log(`Servidor iniciado en el puerto ${PORT}`);
 });
