@@ -1,5 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
 name: Build and deploy Node.js app to Azure Web App - travelstdea
 
 on:
@@ -28,9 +26,6 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
-      
-      # Optional: Skip tests if they're failing but you want to deploy anyway
-      # Add 'continue-on-error: true' to the test step
       
       - name: Zip artifact for deployment
         run: zip -r release.zip ./* -x "node_modules/*" "*.git*"
@@ -71,6 +66,43 @@ jobs:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_C289269F97494C6EA9E99490992A3961 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_96222BBB683243C8BD72D8DC5CA4144F }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_8BC739B6E0A145C28631C86FED07216A }}
+      
+      # Add step to handle existing deployments and clean up to prevent 409 conflicts
+      - name: Check and clean previous deployments
+        run: |
+          # Install Azure CLI extensions for webapp
+          az extension add --name webapp
+          
+          # Stop the web app to release locks
+          echo "Stopping web app to release any locks..."
+          az webapp stop --name travelstdea --resource-group $(az webapp show --name travelstdea --query resourceGroup --output tsv)
+          
+          # List all deployment IDs 
+          echo "Listing current deployments..."
+          DEPLOYMENTS=$(az webapp deployment list --name travelstdea --resource-group $(az webapp show --name travelstdea --query resourceGroup --output tsv) --query [].id --output tsv)
+          
+          # Delete each deployment except the latest one
+          if [ ! -z "$DEPLOYMENTS" ]; then
+            echo "Removing previous deployments..."
+            COUNT=0
+            for DEPLOYMENT_ID in $DEPLOYMENTS; do
+              # Keep the latest deployment (usually the last in the list)
+              if [ $COUNT -lt $(($(echo "$DEPLOYMENTS" | wc -l) - 1)) ]; then
+                echo "Deleting deployment: $DEPLOYMENT_ID"
+                az webapp deployment delete --name travelstdea --resource-group $(az webapp show --name travelstdea --query resourceGroup --output tsv) --id $DEPLOYMENT_ID
+              fi
+              COUNT=$((COUNT + 1))
+            done
+          else
+            echo "No existing deployments found."
+          fi
+          
+          # Start the web app again
+          echo "Starting web app..."
+          az webapp start --name travelstdea --resource-group $(az webapp show --name travelstdea --query resourceGroup --output tsv)
+          
+          # Small delay to ensure all operations complete
+          sleep 10
       
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
