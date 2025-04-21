@@ -1,0 +1,44 @@
+- name: Delete old deployments
+  shell: bash
+  run: |
+    echo "Checking Azure CLI..."
+    if ! command -v az &> /dev/null; then
+      echo "Installing Azure CLI..."
+      curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+      export PATH=$PATH:$HOME/bin
+    fi
+
+    echo "Logging in to Azure..."
+    az login --service-principal \
+      --username "${{ secrets.AZUREAPPSERVICE_CLIENTID_C289269F97494C6EA9E99490992A3961 }}" \
+      --password "${{ secrets.AZURE_CREDENTIALS_SECRET }}" \
+      --tenant "${{ secrets.AZUREAPPSERVICE_TENANTID_96222BBB683243C8BD72D8DC5CA4144F }}"
+
+    echo "Setting Azure subscription..."
+    az account set --subscription "${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_8BC739B6E0A145C28631C86FED07216A }}"
+
+    echo "Getting resource group for app 'travelstdea'..."
+    RESOURCE_GROUP=$(az webapp show --name travelstdea --query resourceGroup --output tsv)
+
+    echo "Retrieving successful deployments..."
+    DEPLOYMENTS=$(az webapp deployment list \
+      --resource-group "$RESOURCE_GROUP" \
+      --name travelstdea \
+      --query "[?properties.status=='Success'] | sort_by(@, &properties.receivedTime) | [].id" \
+      --output tsv)
+
+    DEPLOYMENT_COUNT=$(echo "$DEPLOYMENTS" | wc -l)
+    echo "Found $DEPLOYMENT_COUNT deployments."
+
+    if [ "$DEPLOYMENT_COUNT" -gt 3 ]; then
+      echo "Cleaning up old deployments..."
+      echo "$DEPLOYMENTS" | head -n $(($DEPLOYMENT_COUNT - 3)) | while read -r DEPLOYMENT_ID; do
+        echo "Deleting deployment: $DEPLOYMENT_ID"
+        az resource delete --ids "$DEPLOYMENT_ID"
+      done
+    else
+      echo "No cleanup needed."
+    fi
+
+    echo "Logging out from Azure..."
+    az logout
