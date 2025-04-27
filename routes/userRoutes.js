@@ -3,31 +3,30 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 
-// Ruta GET /api/users
+/// Obtener todos los usuarios
 router.get('/getallusers', userController.getUsers);
 
-// Ruta GET /api/users/:id
-router.get('/:id', userController.getUserById);
+// Obtener un usuario por su ID
+router.get('/getuserbyid/:id', userController.getUserById);
 
-// Ruta POST /api/users
+// Crear un nuevo usuario
 router.post('/createuser', userController.createUser);
+// Actualizar datos de un usuario por su ID
+router.put('/updateuser/:id', userController.updateUser);
 
-// Ruta PUT /api/users/:id
-router.put('/:id', userController.updateUser);
+// Eliminar un usuario por su ID
+router.delete('/deleteuser/:id', userController.deleteUser);
 
-// Ruta DELETE /api/users/:id
-router.delete('/:id', userController.deleteUser);
+// Iniciar sesión de usuario
+router.post('/loginuser', userController.loginUser);
 
-// Ruta LOGIN /api/users/login
-router.post('/login', userController.loginUser);
+// Obtener un usuario por su correo electrónico
+router.get('/getuserbyemail/:email', userController.getUserByEmail);
 
-// ruta GET /api/users/email/:email
-router.get('/email/:email', userController.getUserByEmail);
+// Actualizar el correo electrónico de un usuario por su ID
+router.put('/updateemail/:id', userController.updateEmail);
 
-//ruta PUT /api/users/:id/email
-router.put('/:id/email', userController.updateEmail);
-
-// Ruta PUT /api/users/:id/lastlogin
-router.put('/:id/lastlogin', userController.updateLastLogin);
+// Actualizar la última fecha de inicio de sesión de un usuario por su ID
+router.put('/updatelastlogin/:id', userController.updateLastLogin);
 
 module.exports = router;
