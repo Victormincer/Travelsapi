@@ -20,6 +20,3 @@ TravelsAPI es una API REST construida con Node.js y Express, diseñada para mane
 - **Node.js**
 - **Express.js**
 - **MongoDB / Mongoose**
-- **JWT** para autenticación
-- **Multer** (si hay subida de archivos)
-- **Dotenv**, **Cors**, **Bcrypt**, etc.
